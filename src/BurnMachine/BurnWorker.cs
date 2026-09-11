@@ -46,8 +46,14 @@ public sealed class BurnWorker
 
     private const int MinPollingIntervalMs = 30;
     private const int MaxPollingIntervalMs = 10000;
-    private const int MinPollingTimeoutMs = 100;
-    private const int MaxPollingTimeoutMs = 600000;   // 与 BurnTimeSeconds 上限 600s 对齐
+
+    /// <summary>轮询总超时下限（ms）——宿主仓映射 burn_time_seconds 时据此钳制，
+    /// 无需复制本值（IN-03：此前为 private const，宿主只能硬编码 100）。</summary>
+    public const int MinPollingTimeoutMs = 100;
+
+    /// <summary>轮询总超时上限（ms，与 BurnTimeSeconds 上限 600s 对齐）——宿主仓映射时据此钳制，
+    /// 无需复制本值（IN-03）。</summary>
+    public const int MaxPollingTimeoutMs = 600000;
 
     private readonly Func<ISerialChannel> _channelFactory;
     private readonly Action<string>? _status;
