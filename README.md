@@ -1,4 +1,4 @@
-# BurnMachine
+# BurnMachineSDK
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/10.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -25,7 +25,7 @@
 ## 安装
 
 ```bash
-dotnet add package BurnMachine --version 0.7.0 \
+dotnet add package BurnMachineSDK --version 0.8.0 \
   --source "https://nuget.pkg.github.com/donkilove/index.json"
 ```
 
