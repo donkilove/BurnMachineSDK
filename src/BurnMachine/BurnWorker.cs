@@ -94,6 +94,14 @@ public sealed class BurnWorker
         };
     }
 
+    /// <summary>执行单点烧录：发送清空指令 → 延时 → 发送烧录指令 → 轮询结果直到出结果码或超时。</summary>
+    /// <remarks>
+    /// BM-01 重试语义（产线设计确认）：<b>任何重试都是完整时序重放</b>——轮询阶段
+    /// （烧录指令已发出后）的 IO 异常与未发送指令的失败同等触发「清空 → 烧录」完整序列
+    /// 重试，同一芯片可能被烧录两次（XW16Pro 烧写计数/擦写寿命双扣）。
+    /// 取舍依据：对已烧录芯片重复烧录的代价低于直接 NG（重试对瞬时串口故障有自愈价值）。
+    /// 若产线出现计数损耗投诉，可改为「已发烧录指令 → 仅重试查询不重发」（审查 BM-01 案B）。
+    /// </remarks>
     /// <param name="request">单点烧录请求（BurnTimeSeconds 仅作请求记录，实际等待由 pollingTimeoutMs 决定）</param>
     /// <param name="ct">取消令牌</param>
     /// <param name="pollingIntervalMs">两次轮询查询之间的间隔（ms，30~10000，默认 30）</param>
