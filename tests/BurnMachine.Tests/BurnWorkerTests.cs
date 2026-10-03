@@ -47,11 +47,57 @@ public class BurnWorkerTests
         var port = new MockSerialChannel();   // 无响应：轮询循环至超时
         var worker = new BurnWorker(() => port);
 
-        var outcome = await worker.ExecuteAsync(NewRequest(), CancellationToken.None, pollingTimeoutMs: 300);
+        var outcome = await worker.ExecuteAsync(NewRequest(), CancellationToken.None, pollingTimeoutMs: 100);
 
         Assert.False(outcome.Success);
+        Assert.Equal(1, port.Writes.Count(w => w.StartsWith("`F")));
+        Assert.Equal(1, port.Writes.Count(w => w.StartsWith("`P")));
         Assert.Equal(BurnResultKind.Timeout, outcome.Kind);   // 审计 BM-02：超时独立 Kind（原 Failure）
         Assert.Contains("超时", outcome.Detail);
+    }
+
+    [Fact]
+    public async Task BurnWorker_BurnInProgressTimeout_DoesNotReplay()
+    {
+        const string burnInProgress = "`C00881289|00000001|0002|002A9717|0000000000016BC4|2\r\n";
+        var port = new MockSerialChannel();
+        port.OnQueryWrite = _ => port.InjectDriverBytes(burnInProgress);
+        var worker = new BurnWorker(() => port);
+
+        var outcome = await worker.ExecuteAsync(
+            NewRequest(), CancellationToken.None, pollingIntervalMs: 30, pollingTimeoutMs: 100);
+
+        Assert.Equal(1, port.Writes.Count(w => w.StartsWith("`F")));
+        Assert.Equal(1, port.Writes.Count(w => w.StartsWith("`P")));
+        Assert.True(port.Writes.Count(w => w.StartsWith("`C")) >= 2);
+        Assert.False(outcome.Success);
+        Assert.Equal(BurnResultKind.Timeout, outcome.Kind);
+    }
+
+    [Fact]
+    public async Task BurnWorker_PollingReadIOException_RetriesFullSequence()
+    {
+        var port = new PollingReadIOExceptionOnceChannel();
+        var queryWrites = 0;
+        port.OnQueryWrite = _ =>
+        {
+            queryWrites++;
+            if (queryWrites == 2)
+            {
+                port.InjectDriverBytes("`C00881289|00000001|0002|002A9717|0000000000016BC4|0\r\n");
+            }
+        };
+        var worker = new BurnWorker(() => port);
+
+        var outcome = await worker.ExecuteAsync(
+            NewRequest(), CancellationToken.None, pollingIntervalMs: 30, pollingTimeoutMs: 1000);
+
+        Assert.Equal(2, port.OpenCount);
+        Assert.Equal(2, port.Writes.Count(w => w.StartsWith("`F")));
+        Assert.Equal(2, port.Writes.Count(w => w.StartsWith("`P")));
+        Assert.Equal(2, port.Writes.Count(w => w.StartsWith("`C")));
+        Assert.True(outcome.Success, outcome.Detail);
+        Assert.Equal(BurnResultKind.Success, outcome.Kind);
     }
 
     [Fact]
@@ -216,6 +262,41 @@ public class BurnWorkerTests
         Assert.Equal(1, port.Writes.Count(w => w.StartsWith("`C")));   // 首轮即成功，不空转
     }
 
+    // ---- BM-04：同一串口大小写变体必须使用同一 gate ----
+
+    [Fact]
+    public async Task Execute_ConcurrentCaseVariantSameSerial_Serialized()
+    {
+        var probe = new SharedConcurrencyProbe();
+        const string ok = "`C00881289|00000001|0002|002A9717|0000000000016BC4|0\r\n";
+        var portA = new ProbingChannel(probe);
+        portA.EnqueueResponse(ok);
+        var portB = new ProbingChannel(probe);
+        portB.EnqueueResponse(ok);
+        var workerA = new BurnWorker(() => portA);
+        var workerB = new BurnWorker(() => portB);
+        var reqA = new BurnRequest("COM3", "00881289", "0765", 0.1);
+        var reqB = new BurnRequest("com3", "00881289", "0765", 0.1);
+
+        var taskA = Task.Factory.StartNew(
+            () => workerA.ExecuteAsync(reqA, CancellationToken.None, pollingTimeoutMs: 1000),
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default).Unwrap();
+        var taskB = Task.Factory.StartNew(
+            () => workerB.ExecuteAsync(reqB, CancellationToken.None, pollingTimeoutMs: 1000),
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default).Unwrap();
+
+        var results = await Task.WhenAll(taskA, taskB);
+
+        Assert.All(results, result => Assert.True(result.Success));
+        Assert.Equal(1, probe.MaxActive);
+        Assert.Equal("COM3", portA.LastOpenedPort);
+        Assert.Equal("com3", portB.LastOpenedPort);
+    }
+
     // ---- 审计 BM-03：同一烧录串口并发执行串行化（键控互斥） ----
 
     [Fact]
@@ -295,7 +376,13 @@ public class BurnWorkerTests
 
         public void EnqueueResponse(string response) => _inner.EnqueueResponse(response);
 
-        public void Open(string portName, int baudRate) => _inner.Open(portName, baudRate);
+        public string? LastOpenedPort { get; private set; }
+
+        public void Open(string portName, int baudRate)
+        {
+            LastOpenedPort = portName;
+            _inner.Open(portName, baudRate);
+        }
 
         public void Write(string text)
         {
@@ -304,6 +391,46 @@ public class BurnWorkerTests
         }
 
         public string ReadAvailable() => _inner.ReadAvailable();
+        public void ResetInputBuffer() => _inner.ResetInputBuffer();
+        public void Close() => _inner.Close();
+        public void Dispose() => _inner.Dispose();
+    }
+
+    private sealed class PollingReadIOExceptionOnceChannel : ISerialChannel
+    {
+        private readonly MockSerialChannel _inner = new();
+        private bool _throwNextRead = true;
+
+        public bool IsOpen => _inner.IsOpen;
+        public int OpenCount { get; private set; }
+        public IReadOnlyList<string> Writes => _inner.Writes;
+        public Action<string>? OnQueryWrite
+        {
+            get => _inner.OnQueryWrite;
+            set => _inner.OnQueryWrite = value;
+        }
+
+        public void InjectDriverBytes(string bytes) => _inner.InjectDriverBytes(bytes);
+
+        public void Open(string portName, int baudRate)
+        {
+            OpenCount++;
+            _inner.Open(portName, baudRate);
+        }
+
+        public void Write(string text) => _inner.Write(text);
+
+        public string ReadAvailable()
+        {
+            if (_throwNextRead)
+            {
+                _throwNextRead = false;
+                throw new System.IO.IOException("模拟一次性轮询读取异常");
+            }
+
+            return _inner.ReadAvailable();
+        }
+
         public void ResetInputBuffer() => _inner.ResetInputBuffer();
         public void Close() => _inner.Close();
         public void Dispose() => _inner.Dispose();
@@ -324,5 +451,6 @@ public class BurnWorkerTests
         Assert.True(outcome.Success);
         Assert.Equal(1, port.Writes.Count(w => w.StartsWith("`F")));   // 仅一轮清空指令，无重试重发
     }
+
 }
 

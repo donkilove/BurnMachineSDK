@@ -1,0 +1,36 @@
+BM-04 Green
+
+Command:
+dotnet test tests/BurnMachine.Tests/BurnMachine.Tests.csproj --no-restore --filter "FullyQualifiedName~Execute_ConcurrentCaseVariantSameSerial_Serialized"
+
+Observed: Passed 1, Failed 0, Skipped 0, Total 1 (2 s). The gate uses `ToUpperInvariant()` while the test verifies the original COM3/com3 values still reach Open.
+
+BM-04/BM-07 focused Green
+
+Command:
+dotnet test tests/BurnMachine.Tests/BurnMachine.Tests.csproj --no-restore --filter "FullyQualifiedName~Execute_ConcurrentCaseVariantSameSerial_Serialized|FullyQualifiedName~BurnWorker_NoResponse_IsTimeoutFailure|FullyQualifiedName~BurnWorker_BurnInProgressTimeout_DoesNotReplay|FullyQualifiedName~BurnWorker_PollingReadIOException_RetriesFullSequence"
+
+Observed: Passed 4, Failed 0, Skipped 0, Total 4 (3 s).
+
+BM-07 focused Green
+
+Command:
+dotnet test tests/BurnMachine.Tests/BurnMachine.Tests.csproj --no-restore --filter "FullyQualifiedName~BurnWorker_NoResponse_IsTimeoutFailure|FullyQualifiedName~BurnWorker_BurnInProgressTimeout_DoesNotReplay|FullyQualifiedName~BurnWorker_PollingReadIOException_RetriesFullSequence"
+
+Observed: Passed 3, Failed 0, Skipped 0, Total 3 (1 s).
+
+BM-05 offline restore
+
+Command:
+dotnet restore tests/BurnMachine.Tests/BurnMachine.Tests.csproj --source "C:\Users\Administrator\.nuget\packages"
+
+Observed: both test and production projects restored from the local package cache; no warning output. `project.assets.json` resolves `xunit.runner.visualstudio/3.0.0`; no NU1603 entry remained.
+
+Full suite
+
+Command:
+dotnet test BurnMachine.sln --no-restore
+
+Observed: Passed 134, Failed 0, Skipped 0, Total 134 (9 s). The solution build emitted no NU1603 warning.
+
+No network source, real serial port, hardware, or package publishing was used.

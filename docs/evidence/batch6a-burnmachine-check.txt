@@ -1,0 +1,8 @@
+Batch6A structural checks
+
+- docs/specs/README.md lists the three in-progress/reference SPEC entities and the done batch-H entity; each link resolves.
+- docs/specs/done/README.md links to the single done batch-H SPEC; its verification evidence is embedded in the SPEC and the index uses `—`.
+- docs/evidence/README.md exists as the index for Batch6A Red/Green/check artifacts.
+- The done entity `batch-h-burn-retry-semantics.md` is under docs/specs/done/, not docs/specs/.
+- TODO BM-06 records the previous absence of these indexes until Batch6A closure.
+- Repository README has no document-class declaration table and no tools/check-docs.* entry point; the document gate criterion is absent.

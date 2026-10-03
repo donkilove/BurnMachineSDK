@@ -1,0 +1,55 @@
+BM-04 controlled mutation Red
+
+Command:
+dotnet test tests/BurnMachine.Tests/BurnMachine.Tests.csproj --no-restore --filter "FullyQualifiedName~Execute_ConcurrentCaseVariantSameSerial_Serialized"
+
+Controlled mutation: temporarily changed the SerialGates lookup from `request.BurnSerial.ToUpperInvariant()` back to the original `request.BurnSerial`. The normalized implementation was already present in the shared worktree when Lead began the target run; this is a controlled mutation Red, not evidence of the external change's original chronology. The implementation was restored immediately after this run.
+
+Observed output:
+Failed BurnMachine.Tests.BurnWorkerTests.Execute_ConcurrentCaseVariantSameSerial_Serialized [116 ms]
+Assert.Equal() Failure: Values differ
+Expected: 1
+Actual: 2
+Failed: 1, Passed: 0, Skipped: 0, Total: 1
+
+BM-07 AC-7: read-window Timeout replay mutant
+
+Command:
+dotnet test tests/BurnMachine.Tests/BurnMachine.Tests.csproj --no-restore --filter "FullyQualifiedName~BurnWorker_NoResponse_IsTimeoutFailure"
+
+Temporary mutation: changed the `remainingAfterRead <= 0` terminal Timeout return to throw `TimeoutException`, entering the retry catch. Restored immediately after this run.
+
+Observed output:
+Failed BurnMachine.Tests.BurnWorkerTests.BurnWorker_NoResponse_IsTimeoutFailure [1 s]
+Assert.Equal() Failure: Values differ
+Expected: 1
+Actual: 2
+Failed: 1, Passed: 0, Skipped: 0, Total: 1
+
+BM-07 AC-7: next-poll Timeout replay mutant
+
+Command:
+dotnet test tests/BurnMachine.Tests/BurnMachine.Tests.csproj --no-restore --filter "FullyQualifiedName~BurnWorker_BurnInProgressTimeout_DoesNotReplay"
+
+Temporary mutation: changed the `remainingMs <= 0` terminal Timeout return to throw `TimeoutException`, entering the retry catch. Restored immediately after this run.
+
+Observed output:
+Failed BurnMachine.Tests.BurnWorkerTests.BurnWorker_BurnInProgressTimeout_DoesNotReplay [1 s]
+Assert.Equal() Failure: Values differ
+Expected: 1
+Actual: 2
+Failed: 1, Passed: 0, Skipped: 0, Total: 1
+
+BM-07 AC-8: polling IOException retry-disabled mutant
+
+Command:
+dotnet test tests/BurnMachine.Tests/BurnMachine.Tests.csproj --no-restore --filter "FullyQualifiedName~BurnWorker_PollingReadIOException_RetriesFullSequence"
+
+Temporary mutation: disabled IOException retry in the ExecuteCoreAsync exception catch. Restored immediately after this run.
+
+Observed output:
+Failed BurnMachine.Tests.BurnWorkerTests.BurnWorker_PollingReadIOException_RetriesFullSequence [49 ms]
+Assert.Equal() Failure: Values differ
+Expected: 2
+Actual: 1
+Failed: 1, Passed: 0, Skipped: 0, Total: 1

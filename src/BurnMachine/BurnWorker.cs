@@ -118,7 +118,7 @@ public sealed class BurnWorker
 
         // 审计 BM-03：按烧录串口键控互斥——同一 BurnSerial 的并发执行串行化
         // （防同口并发争抢；不同串口互不影响；跨进程需外部互斥）
-        var gate = SerialGates.GetOrAdd(request.BurnSerial, static _ => new SemaphoreSlim(1, 1));
+        var gate = SerialGates.GetOrAdd(request.BurnSerial.ToUpperInvariant(), static _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
