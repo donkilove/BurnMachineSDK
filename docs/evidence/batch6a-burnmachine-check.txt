@@ -1,8 +1,27 @@
-Batch6A structural checks
+Batch6A final structural checks
 
-- docs/specs/README.md lists the three in-progress/reference SPEC entities and the done batch-H entity; each link resolves.
-- docs/specs/done/README.md links to the single done batch-H SPEC; its verification evidence is embedded in the SPEC and the index uses `—`.
-- docs/evidence/README.md exists as the index for Batch6A Red/Green/check artifacts.
-- The done entity `batch-h-burn-retry-semantics.md` is under docs/specs/done/, not docs/specs/.
-- TODO BM-06 records the previous absence of these indexes until Batch6A closure.
-- Repository README has no document-class declaration table and no tools/check-docs.* entry point; the document gate criterion is absent.
+Command (PowerShell, workdir D:\MachineSDK\BurnMachineSDK):
+
+```powershell
+$paths = @('docs/specs/README.md','docs/specs/burn-polling.md','docs/specs/polling-uid.md','docs/specs/timing-tighten.md','docs/specs/done/README.md','docs/specs/done/batch-h-burn-retry-semantics.md','docs/specs/done/batch6a-burnmachine.md','docs/evidence/README.md','docs/evidence/batch6a-burnmachine-red.txt','docs/evidence/batch6a-burnmachine-green.txt','docs/evidence/batch6a-burnmachine-check.txt','docs/evidence/batch6a-burnmachine.verify.md')
+foreach ($p in $paths) { if (-not (Test-Path -LiteralPath $p)) { throw "Missing entity: $p" }; "PASS entity: $p" }
+$active = Get-Content -LiteralPath 'docs/specs/README.md' -Raw
+if ($active.Contains('[batch6a-burnmachine.md](batch6a-burnmachine.md)')) { throw 'Stale active SPEC link remains' }
+if (-not $active.Contains('[done/batch6a-burnmachine.md](done/batch6a-burnmachine.md)')) { throw 'Batch6A done link missing from active index' }
+$done = Get-Content -LiteralPath 'docs/specs/done/README.md' -Raw
+if (-not $done.Contains('[batch6a-burnmachine.md](batch6a-burnmachine.md)')) { throw 'Batch6A entity missing from done index' }
+if (-not $done.Contains('8388a84')) { throw 'Batch6A commit missing from done index' }
+$todo = Get-Content -LiteralPath 'D:\MachineSDK\TODO.md'
+if ($todo -match '^#### BurnMachineSDK') { throw 'BurnMachine issues remain in open TODO section' }
+if (-not ($todo -match '^## 未闭环.*17 条')) { throw 'Open TODO count is not 17' }
+if (-not ($todo -match '^### P3（17 条）')) { throw 'P3 TODO count is not 17' }
+foreach ($id in @('BM-02','BM-03','BM-04','BM-05','BM-06','BM-07')) { $row = $todo | Where-Object { $_.StartsWith("| $id ") }; if (@($row).Count -ne 1 -or $row -notmatch '8388a84') { throw "TODO archive missing or ambiguous: $id" }; "PASS TODO archive: $id -> 8388a84" }
+'PASS TODO open count: 17 (P3=17, P2=0)'
+```
+
+Observed output: all 12 required entities existed; active index contains the Batch6A done path; done index contains Batch6A and commit `8388a84`; BM-02~07 appear once each in the closed archive; no BurnMachine group remains in open TODO; open/P3 counts are both 17.
+
+Additional checks:
+- `glob` finds `batch6a-burnmachine.md` only under `docs/specs/done/`.
+- Done SPEC has a decision record with all ACs met.
+- The document-gate criterion is absent: BurnMachine README has no document-class declaration table and the repository has no `tools/check-docs.*` entry point.

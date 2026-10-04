@@ -5,3 +5,4 @@
 | 规格 | 完成日期 | 相关提交 | 证据 |
 |---|---|---|---|
 | [batch-h-burn-retry-semantics.md](batch-h-burn-retry-semantics.md) | 2026-10-01 | `3569963` | —（验证记录内嵌在规格中） |
+| [batch6a-burnmachine.md](batch6a-burnmachine.md) | 2026-10-03 | `8388a84` | [batch6a-burnmachine.verify.md](../../evidence/batch6a-burnmachine.verify.md) |

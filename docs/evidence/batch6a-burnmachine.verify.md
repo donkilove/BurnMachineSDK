@@ -1,6 +1,6 @@
 # Batch6A BurnMachine 验证记录
 
-> 生成：2026-10-03 · 规格：docs/specs/batch6a-burnmachine.md · 状态：部分完成（待独立复核与用户提交授权）
+> 生成：2026-10-03 · 规格：docs/specs/done/batch6a-burnmachine.md · 状态：完成（提交 `8388a84`）
 > 原始输出：batch6a-burnmachine-red.txt、batch6a-burnmachine-green.txt、batch6a-burnmachine-check.txt
 
 ## AC ↔ 验证映射
@@ -11,7 +11,7 @@
 | AC-2 BM-03 | 版本字段/安装示例/历史与本批实测数核对 | 0.8.2 与 README 对齐；测试数 134；历史发布日期来源明确 | green |
 | AC-3 BM-04 | `Execute_ConcurrentCaseVariantSameSerial_Serialized`，断言 COM3/com3 gate 串行且原始值传给 Open | mutation Red: MaxActive=2；Green: Passed 1/1 | red / green |
 | AC-4 BM-05 | 本地 NuGet feed restore 与 assets 检查 | runner 精确 3.0.0；无 NU1603；未联网 | green |
-| AC-5 BM-06 | 双向索引、实体路径和 batch-H done 归档核对 | 结构通过 | check |
+| AC-5 BM-06 | 双向索引、实体路径和 batch-H done 归档核对 | 结构通过，Batch6A SPEC 已归档 | check |
 | AC-7 BM-07 timeout | `BurnWorker_NoResponse_IsTimeoutFailure` 与 `BurnWorker_BurnInProgressTimeout_DoesNotReplay`；验证两个 Timeout 出口都不重发 F/P | 两个 TimeoutException mutants 均 Red，恢复后两项 Green | red / green |
 | AC-8 BM-07 poll IO | `BurnWorker_PollingReadIOException_RetriesFullSequence`；验证一次 Read IOException 后整轮重试 | no-retry mutant Red，恢复后 Green | red / green |
 | AC-6 | `dotnet test BurnMachine.sln --no-restore` | Passed 134 / Failed 0 / Skipped 0 | green |
@@ -34,7 +34,7 @@
 
 ## 未达成 / 待确认
 
-代码、版本/README/协议文档和 BM-06 索引修复已在共享工作树；独立 reviewer 复核及用户批准提交尚待完成，故根 TODO BM-02~07 仍保持未闭环。
+无。Batch6A AC-1~8 均通过；提交 `8388a84`；根 TODO BM-02~07 已归档。
 
 ## 残余风险与后续
 
