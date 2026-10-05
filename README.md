@@ -100,7 +100,7 @@ var worker = new BurnWorker(() => mock);
 
 ## 版本历史
 
-- **v0.8.2（待发布）** —— BM-02 明确轮询超时为终态、不触发重放；BM-03 对齐版本历史和实测测试数；BM-04 统一烧录串口 gate 的大小写键；BM-05 runner 固定到 3.0.0；BM-06 补齐规格/证据索引；BM-07 锁定 Timeout 不重放与轮询 IO 异常重试（134 测试全绿）
+- **v0.8.2**（发布：2026-10-05；tag `v0.8.2` 触发 release workflow，GitHub Packages 已可见）—— BM-02 明确轮询超时为终态、不触发重放；BM-03 对齐版本历史和实测测试数；BM-04 统一烧录串口 gate 的大小写键；BM-05 runner 固定到 3.0.0；BM-06 补齐规格/证据索引；BM-07 锁定 Timeout 不重放与轮询 IO 异常重试（134 测试全绿）
 - **v0.8.1**（版本元数据提交：2026-10-01；Git 未找到发布标签）—— 批次 H 明确 BM-01 案A 的完整时序重试风险（纯文档/XML 注释变更；当时验证 131/131）
 - **v0.8.0**（轻量标签目标提交：2026-09-29；无独立发布日期记录）—— 仓库与 NuGet 包更名为 BurnMachineSDK，PackageId、RepositoryUrl 和 README 安装命令同步；程序集与命名空间不变
 - **v0.7.2**（2026-09-11）—— **公开轮询总超时边界常量**（`BurnWorker.MinPollingTimeoutMs` = 100 / `MaxPollingTimeoutMs` = 600000）：修复 IN-03——宿主仓（MachineWorker）此前只能复制私有常量做钳制，SDK 改边界后宿主运行期才暴露；新增边界一致性测试（131 测试全绿）
